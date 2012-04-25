@@ -23,6 +23,19 @@ body
 	height:50px;
 }
 
+#datasend
+{
+	height:30px;
+	padding-left:10px;
+	padding-right:10px;
+}
+
+#data
+{
+	width:200px;
+	height:30px
+}
+
 img
 {
 	height:30px;

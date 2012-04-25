@@ -67,7 +67,6 @@
 			$("#connected").html("<b>Users connected ("+data.length+")</b>");
 		});
 
-		//Listener, whenever the server emits 'updatechat', this updates the chat body
 		socket.on("updatechat", function (username, data, date)
 		{
 			var time = new Date(date);
@@ -147,8 +146,8 @@
 					</tbody>
 				</table>
 				<fieldset class="control-group">
-					<input id="data" style="width:200px;height:30px"/>
-					<input type="button" id="datasend" value="Send" style="height:30px;padding-left:10px;padding-right:10px"/>
+					<input id="data"/>
+					<input type="button" id="datasend" value="Send"/>
 				</fieldset>
 			</div>
 		</div>
