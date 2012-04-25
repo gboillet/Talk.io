@@ -1,0 +1,31 @@
+body
+{
+	background-color:#E3D6B7;
+	/*background-image:url(../img/paper.jpg);*/
+	background-repeat:repeat;
+}
+
+.navbar
+ {
+    margin-bottom: 18px;
+    overflow: visible;
+}
+
+.navbar-inner 
+{
+    background-color: #2C2C2C;
+    background-image: -moz-linear-gradient(center top , #333333, #222222);
+    background-repeat: repeat-x;
+    border-radius: 0px 0px 0px 0px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+    padding-left: 20px;
+    padding-right: 20px;
+	height:50px;
+}
+
+img
+{
+	height:30px;
+	margin-top:10px;
+	margin-bottom:10px;
+}

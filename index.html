@@ -1,0 +1,157 @@
+<html>                                                                  
+<head>
+	<link rel="stylesheet" href="../css/bootstrap.css"/>
+	<link rel="stylesheet" href="../css/index.css"/> 
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="../jquery.js"></script>
+	<script>
+		var counter = 0;
+		
+		function parseUri(sourceUri)
+		{
+			var uriPartNames = ["source","protocol","authority","domain","port","path","directoryPath","fileName","query","anchor"];
+			var uriParts = new RegExp("^(?:([^:/?#.]+):)?(?://)?(([^:/?#]*)(?::(\\d*))?)?((/(?:[^?#](?![^?#/]*\\.[^?#/.]+(?:[\\?#]|$)))*/?)?([^?#/]*))?(?:\\?([^#]*))?(?:#(.*))?").exec(sourceUri);
+			var uri = {};
+			
+			for(var i = 0; i < 10; i++)
+				uri[uriPartNames[i]] = (uriParts[i] ? uriParts[i] : "");
+			
+			// Always end directoryPath with a trailing backslash if a path was present in the source URI
+			// Note that a trailing backslash is NOT automatically inserted within or appended to the "path" key
+			if(uri.directoryPath.length > 0)
+				uri.directoryPath = uri.directoryPath.replace(/\/?$/, "/");
+				
+			return uri;
+		}
+		
+		function trim (myString)
+		{
+			return myString.replace(/^\s+/g,'').replace(/\s+$/g,'')
+		}
+		
+		var socket = io.connect("http://talkio.cloudfoundry.com");
+		var localUsername = "";
+
+		socket.on("connect", function()
+		{
+			var uri = parseUri(document.location.href).path;
+			var room = new RegExp("room/(.*)").exec(uri)[1];
+			
+			localUsername = trim(prompt("What's your name?"));
+			
+			socket.emit("adduser", localUsername, room);
+		});
+		
+		socket.on("noRoom", function()
+		{
+			window.location.href = "http://talkio.cloudfoundry.com";
+		});
+		
+		socket.on("changeNick", function(username)
+		{
+			localUsername = trim(prompt("("+username+" already in use) Pick another nickname"));
+			socket.emit("adduser", localUsername);
+		});
+		
+		//Update the users list
+		socket.on("updateusers", function(data)
+		{
+			var i=0;
+		
+			$('#users').empty();
+			for(i=0; i<data.length; i++)
+			{
+				$('#users').append("<div><i class='icon-user' style='margin-right:5px'></i>"+data[i]+"</div>");
+			}
+			
+			$("#connected").html("<b>Users connected ("+data.length+")</b>");
+		});
+
+		//Listener, whenever the server emits 'updatechat', this updates the chat body
+		socket.on("updatechat", function (username, data, date)
+		{
+			var time = new Date(date);
+			var minute = time.getMinutes();
+			
+			if(minute < 10)
+				minute = "0"+minute;
+					
+			if(username == localUsername)
+				$("#conversation").append("<tr id='msg_"+counter+"'><td><b style='color:green'>"+username+"</b>: "+data+"</td><td>"+time.getHours()+":"+minute+"</td></tr>");
+			else if(username != "Server")
+				$("#conversation").append("<tr id='msg_"+counter+"'><td>"+username+": "+data+"</td><td>"+time.getHours()+":"+minute+"</td></tr>");
+			else
+				$("#conversation").append("<tr id='msg_"+counter+"'><td><b>"+username+": "+data+"</b></td><td>"+time.getHours()+":"+minute+"</td></tr>");
+			
+			$("#msg_"+counter).hide().fadeIn("fast");
+			
+			counter=counter+1;
+		});
+		
+		//On load of page
+		$(function()
+		{
+			//When the client clicks SEND
+			$('#datasend').click( function()
+			{
+				var message = trim($("#data").val());	
+					
+				if(message == '')
+				{
+					$(".control-group").attr("class", "control-group error");
+				}
+				else
+				{
+					$('#data').val('');
+					//Tell server to execute 'sendchat' and send along one parameter
+					socket.emit("sendchat", message, new Date());
+				}
+			});
+
+			//When the client hits ENTER on their keyboard
+			$("body").keypress(function(e)
+			{
+				if(e.which != 32)
+						$(".control-group").attr("class", "control-group");
+				if(e.which == 13)
+				{
+					$(this).blur();
+					$("#datasend").focus().click();
+					$("#data").focus();
+				}
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<div class="navbar">
+		<div class="navbar-inner">
+			<div class="container">
+				<img src="../img/logoSmall.png" alt="Chat.io logo"/>
+			</div>
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="row-fluid">
+			<div class="span2">
+				<div id="connected"><b>Users connected</b></div>
+				<div id="users"></div>
+			</div>
+			
+			<div id="chat" class="span10">
+				<table class="table table-striped table-bordered table-condensed" style="width:1070px;margin-right:10px">
+					
+					<tbody id="conversation">
+						
+					</tbody>
+				</table>
+				<fieldset class="control-group">
+					<input id="data" style="width:200px;height:30px"/>
+					<input type="button" id="datasend" value="Send" style="height:30px;padding-left:10px;padding-right:10px"/>
+				</fieldset>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

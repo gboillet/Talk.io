@@ -1,0 +1,108 @@
+<html>                                                                  
+<head>
+	<link rel="stylesheet" href="css/bootstrap.css"/>
+	<link rel="stylesheet" href="css/homepage.css"/> 
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="jquery.js"></script>
+	<script>	
+	function getLanguage()
+	{
+		var start = navigator.userAgent.indexOf("[");
+		if (start > -1)
+		{
+			var end = navigator.userAgent.indexOf("]");
+			if (end > -1)
+				return navigator.userAgent.substring(start+1,end);
+		}
+		else
+			return "en";
+	}
+	
+	function trim (myString)
+	{
+		return myString.replace(/^\s+/g,'').replace(/\s+$/g,'')
+	}
+		
+	$(function()
+	{
+		$(".help-inline").fadeTo(100, 0);
+		
+		if(getLanguage() == "fr")
+		{
+			$(".add-on").html("Nom du salon de discussion");
+			$(".help-inline").html("Le nom du salon ne doit pas être vide");
+			$("#createRoom").attr("value", "Créer le salon!");
+		}
+				
+		$("#createRoom").click( function()
+		{
+			var roomName = trim($("#roomName").val()); //first trim the room name
+			
+			if(roomName == '') //show error if the room name is empty
+			{
+				$(".help-inline").html("Room name must be non-empty");
+				$(".help-inline").fadeTo(600, 1);
+				$(".control-group").attr("class", "control-group error");	
+			}
+			else
+			{
+				var socket = io.connect("http://talkio.cloudfoundry.com");
+
+				socket.on("connect", function()
+				{
+					socket.emit("createRoom", roomName, function (response)
+					{
+						//if the server refuse the room creation, display the error message
+						if (response.error)
+						{
+							$(".help-inline").html(response.error);
+							$(".help-inline").fadeTo(600, 1);
+							$(".control-group").attr("class", "control-group error");	
+						}
+						else
+							window.location.href = "http://talkio.cloudfoundry.com/room/"+roomName;
+					});	
+				});
+			}
+		});
+		
+		$("body").keypress(function(e)
+		{
+			if(e.which == 13)
+			{
+				$(this).blur();
+				$("#createRoom").focus().click();
+			}
+			else if(e.which != 32)
+			{
+				//Hide any error message if the user type something in the input (except a space)
+				$(".control-group").attr("class", "control-group");
+				$(".help-inline").fadeTo(100, 0);
+			}
+		});
+	});
+	</script>
+</head>
+
+<body>
+	<div id="content">
+		<img src="img/logo.png" alt="Chat.io logo" style="text-align:center"/>
+		<form class="form-horizontal">
+			<div class="control-group">
+				<div class="input-prepend">
+					<span class="add-on">Room name:</span>
+					<input id="roomName" type="text" size="65"/>
+					<span class="help-inline">Room name must be non-empty</span>
+				</div>
+			</div>
+		
+			<input type="button" id="createRoom" value="Create room!"/>
+		</form>
+	</div>
+	
+	<div id="footer">&copy; 2012 / 
+		<a href="https://github.com/gboillet/Talk.io">GitHub</a> Powered by <a href="http://socket.io/">Socket.io</a> 
+	</div>
+
+</body>
+</html>
